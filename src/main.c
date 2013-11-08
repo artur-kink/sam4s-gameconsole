@@ -25,17 +25,33 @@
 // From module: pio_handler support enabled
 #include <pio_handler.h>
 
-int main (void){
-	board_init();
+#include <tc.h>
 
+unsigned long active = LED_0_ACTIVE;
+
+void TC_Handler(void){
+	active = !active;
+	int x = tc_read_cv(TC0, 0);
+	ioport_set_pin_level(LED_0_PIN, active);
+	return;
+}
+
+int main(void){
+	board_init();
+	
+	NVIC_DisableIRQ(TC0_IRQn);
+	NVIC_ClearPendingIRQ(TC0_IRQn);
+	NVIC_SetPriority(TC0_IRQn, 0);
+	NVIC_EnableIRQ(TC0_IRQn);
+	
+	sysclk_enable_peripheral_clock(ID_TC0);
+	
+	tc_init (TC0, 0, TC_CCR_CLKEN);
+	tc_enable_interrupt (TC0, 0, TC_IER_COVFS);
+	//Enable clock.
+	tc_start(TC0, 0);
+	
 	while (1) {
-		// Is button pressed?
-		if (ioport_get_pin_level(BUTTON_0_PIN) == BUTTON_0_ACTIVE) {
-			// Yes, so turn LED on.
-			ioport_set_pin_level(LED_0_PIN, LED_0_ACTIVE);
-		} else {
-			// No, so turn LED off.
-			ioport_set_pin_level(LED_0_PIN, !LED_0_ACTIVE);
-		}
+		int y = 0;
 	}
 }
