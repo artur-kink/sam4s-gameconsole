@@ -43,6 +43,6 @@
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
 
-#define TC_Handler  TC0_Handler
+#define TC_VGA_Handler  TC0_Handler
 
 #endif /* CONF_BOARD_H */
