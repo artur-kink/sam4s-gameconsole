@@ -11,10 +11,24 @@
 #include <sysclk.h>
 #include <tc.h>
 
+//VGA Info
+//640x480 60hz
+//Field Rate: 60.04hz
+//System Clock: 120mhz - 120,000,000hz
+//TCC_VERTICAL Rate = 1953 cycles.
+
+
 //VGA Timer
 #define TC_VGA TC0
 //Vertical Sync Channel
 #define TCC_VERTICAL 0
+//Horizontal Sync Channel
+#define TCC_HORIZONTAL 1
+
+//VSync Pin
+#define PIN_VSYNC EXT3_PIN_3
+//HSync Pin
+#define PIN_HSYNC EXT3_PIN_5
 
 //Debug LED state.
 unsigned long active = LED_0_ACTIVE;
@@ -25,17 +39,28 @@ unsigned long active = LED_0_ACTIVE;
  */
 void TC_VGA_Handler(void){
 	static int counter = 0;
+	
 	if(tc_get_status(TC_VGA, TCC_VERTICAL) & TC_IER_CPAS){
+		//VSync signal.
 		tc_disable_interrupt(TC_VGA, TCC_VERTICAL, TC_IER_CPAS);
 		tc_stop(TC_VGA, TCC_VERTICAL);
+		ioport_set_pin_level(PIN_VSYNC, 1);
 		counter++;
-		if(counter > 10){
+		if(counter > 60){
 			counter = 0;
 			active = !active;
 			ioport_set_pin_level(LED_0_PIN, active);
 		}
+		
+
+		ioport_set_pin_level(PIN_VSYNC, 0);
 		tc_start(TC_VGA, TCC_VERTICAL);
 		tc_enable_interrupt(TC_VGA, TCC_VERTICAL, TC_IER_CPAS);
+	}else if(tc_get_status(TC_VGA, TCC_HORIZONTAL) & TC_IER_CPAS){
+		//HSync signal.
+		ioport_set_pin_level(PIN_HSYNC, 1);
+		
+		ioport_set_pin_level(PIN_HSYNC, 0);
 	}
 	return;
 }
@@ -51,15 +76,31 @@ int main(void){
 	
 	sysclk_enable_peripheral_clock(ID_TC0);
 	
-	//Initialize counter.
-	tc_init(TC_VGA, TCC_VERTICAL, TC_CMR_TCCLKS_TIMER_CLOCK4 | TC_CMR_WAVE | TC_CMR_ACPC_CLEAR);
+	//Initialize vsync clock.
+	tc_init(TC_VGA, TCC_VERTICAL, TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_WAVE | TC_CMR_ACPC_CLEAR);
 	tc_set_writeprotect(TC_VGA, 0);
-	tc_write_ra(TC_VGA, TCC_VERTICAL, 29297);
+	tc_write_ra(TC_VGA, TCC_VERTICAL, 7812);
 	tc_set_writeprotect(TC_VGA, 1);
 	tc_disable_interrupt(TC_VGA, TCC_VERTICAL, 0xFFFFFFFF);
 	tc_enable_interrupt(TC_VGA, TCC_VERTICAL, TC_IER_CPAS);
-	//Enable clock.
 	tc_start(TC_VGA, TCC_VERTICAL);
+	
+	//Initialize hsync clock.
+	tc_init(TC_VGA, TCC_HORIZONTAL, TC_CMR_TCCLKS_TIMER_CLOCK1 | TC_CMR_WAVE | TC_CMR_ACPC_CLEAR);
+	tc_set_writeprotect(TC_VGA, 0);
+	tc_write_ra(TC_VGA, TCC_HORIZONTAL, 31250);
+	tc_set_writeprotect(TC_VGA, 1);
+	tc_disable_interrupt(TC_VGA, TCC_HORIZONTAL, 0xFFFFFFFF);
+	
+	//Enable vsync pin
+	ioport_enable_pin(PIN_VSYNC);
+	ioport_set_pin_dir(PIN_VSYNC, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_VSYNC, 0);
+	
+	//Enable hsync pin
+	ioport_enable_pin(PIN_HSYNC);
+	ioport_set_pin_dir(PIN_HSYNC, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_HSYNC, 0);
 	
 	//Main loop
 	while (1) {
