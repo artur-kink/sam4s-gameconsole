@@ -28,11 +28,17 @@
 #include <tc.h>
 
 unsigned long active = LED_0_ACTIVE;
-
+int counter = 0;
 void TC_Handler(void){
-	active = !active;
-	int x = tc_read_cv(TC0, 0);
-	ioport_set_pin_level(LED_0_PIN, active);
+	tc_disable_interrupt(TC0, 0, TC_IER_CPAS);
+	if((tc_get_status(TC0, 0) & TC_IER_CPAS) == TC_IER_CPAS){
+		tc_stop(TC0, 0);
+		counter = 0;
+		active = !active;
+		ioport_set_pin_level(LED_0_PIN, active);
+		tc_start(TC0, 0);
+	}
+	tc_enable_interrupt(TC0, 0, TC_IER_CPAS);
 	return;
 }
 
@@ -46,12 +52,17 @@ int main(void){
 	
 	sysclk_enable_peripheral_clock(ID_TC0);
 	
-	tc_init (TC0, 0, TC_CCR_CLKEN);
-	tc_enable_interrupt (TC0, 0, TC_IER_COVFS);
+	//Initialize counter.
+	tc_init(TC0, 0, TC_CMR_TCCLKS_TIMER_CLOCK1 | TC_CMR_WAVE | TC_CMR_ACPC_CLEAR);
+	tc_set_writeprotect(TC0, 0);
+	tc_write_ra(TC0, 0, 60000);
+	tc_set_writeprotect(TC0, 1);
+	tc_disable_interrupt(TC0, 0, 0xFFFFFFFF);
+	tc_enable_interrupt(TC0, 0, TC_IER_CPAS);
 	//Enable clock.
 	tc_start(TC0, 0);
 	
 	while (1) {
-		int y = 0;
+		asm("nop");
 	}
 }
