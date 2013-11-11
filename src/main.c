@@ -4,6 +4,19 @@
 //640x480 60hz
 //Field Rate: 60.04hz
 //System Clock: 120mhz - 120,000,000hz
+//Vsync Timer Speed: 120mhz/128 = 937,500hz
+//Vsync pulse: 60.04hz = 937,000/60.04 = 15,614.59
+#define VSYNC_PULSE 15615
+
+//Vsync pulse length: 63.57mu
+//Vsync Timer Speed: 120mhz/2 = 60mhz = 60hz/mu
+//Vsync pulse length: 60x63.57 = 3,814
+#define VSYNC_PULSE_LEN 3814
+
+//Hsync pulse: 31.46khz
+//Hsync Timer Speed: 120mhz/2 = 60mhz = 60,000khz
+//Hsync pulse length: 60,000/31.46 = 1,907.18
+#define HSYNC_PULSE 1907
 
 //VGA Timer
 #define TC_VGA TC0
@@ -46,6 +59,7 @@ void TC_VSYNC_Handler(void){
 		ioport_set_pin_level(PIN_VSYNC, 0);
 		ioport_set_pin_level(PIN_HSYNC, 1);
 		
+		ioport_set_pin_level(PIN_RED, 0);
 		//Debug 1 second led counter.
 		sec_counter++;
 		if(sec_counter == 60){
@@ -55,7 +69,6 @@ void TC_VSYNC_Handler(void){
 		}
 	}
 	
-	//ioport_set_pin_level(PIN_RED, 1);
 	return;
 }
 
@@ -81,6 +94,26 @@ void TC_HSYNC_Handler(void){
 	
 	if(tc_get_status(TC_VGA, TCC_HSYNC) & TC_IER_CPCS){
 		ioport_set_pin_level(PIN_HSYNC, 0);
+		ioport_set_pin_level(PIN_RED, 0);
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
 		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
 		
 		//Debug hsync count
@@ -90,6 +123,7 @@ void TC_HSYNC_Handler(void){
 			tc_stop(TC_VGA, TCC_HSYNC);
 		}
 		ioport_set_pin_level(PIN_HSYNC, 1);
+		ioport_set_pin_level(PIN_RED, 1);
 	}
 }
 
@@ -104,8 +138,8 @@ int main(void){
 	//Initialize vsync timer.
 	tc_set_writeprotect(TC_VGA, 0);
 	tc_init(TC_VGA, TCC_VSYNC, TC_CMR_TCCLKS_TIMER_CLOCK4 | TC_CMR_CPCTRG | TC_CMR_ACPC_CLEAR);
-	//Set Compare register value to fire interrupt every 1/60 seconds.
-	tc_write_rc(TC_VGA, TCC_VSYNC, 15500);
+	//Set Compare register value to fire interrupt every 1/60.04 seconds.
+	tc_write_rc(TC_VGA, TCC_VSYNC, VSYNC_PULSE);
 	//Enable compare interrupt.
 	tc_enable_interrupt(TC_VGA, TCC_VSYNC, TC_IER_CPCS);
 	
@@ -113,7 +147,7 @@ int main(void){
 	tc_set_writeprotect(TC_VGA, 0);
 	tc_init(TC_VGA, TCC_VSYNC_PULSE, TC_CMR_TCCLKS_TIMER_CLOCK1 | TC_CMR_CPCTRG | TC_CMR_ACPC_CLEAR);
 	//Set Compare register value to fire interrupt every 2/60/524 seconds(The length of 2 lines = length of vsync pulse).
-	tc_write_rc(TC_VGA, TCC_VSYNC_PULSE, 3772);
+	tc_write_rc(TC_VGA, TCC_VSYNC_PULSE, VSYNC_PULSE_LEN);
 	//Enable compare interrupt.
 	tc_enable_interrupt(TC_VGA, TCC_VSYNC_PULSE, TC_IER_CPCS);
 	
@@ -126,7 +160,7 @@ int main(void){
 	tc_set_writeprotect(TC_VGA, 0);
 	tc_init(TC_VGA, TCC_HSYNC, TC_CMR_TCCLKS_TIMER_CLOCK1 | TC_CMR_CPCTRG | TC_CMR_ACPC_CLEAR);
 	//Set Compare register value to fire interrupt every 1/60/524 seconds.
-	tc_write_rc(TC_VGA, TCC_HSYNC, 1886);
+	tc_write_rc(TC_VGA, TCC_HSYNC, HSYNC_PULSE);
 	//Enable compare interrupt.
 	tc_enable_interrupt(TC_VGA, TCC_HSYNC, TC_IER_CPCS);
 	
