@@ -1,15 +1,5 @@
-#include <compiler.h>
-#include <status_codes.h>
-#include <gpio.h>
-#include <board.h>
-#include <ioport.h>
-#include <interrupt.h>
-#include <pmc.h>
-#include <sleep.h>
-#include <parts.h>
-#include <exceptions.h>
-#include <sysclk.h>
-#include <tc.h>
+#include "asf.h"
+
 
 //VGA Info
 //640x480 60hz
@@ -19,14 +9,18 @@
 
 //VGA Timer
 #define TC_VGA TC0
+//Vertical Sync Channel
+#define TCC_VSYNC 0
+//Vertical Sync Pulse Length Channel
+#define TCC_VSYNC_PULSE 1
 //Horizontal Sync Channel
-#define TCC_HORIZONTAL 0
+#define TCC_HSYNC 2
 
 //VSync Pin
 #define PIN_VSYNC EXT3_PIN_3
 //HSync Pin
 #define PIN_HSYNC EXT3_PIN_5
-
+//Red Pin
 #define PIN_RED EXT3_PIN_17
 
 //Debug LED state.
@@ -37,120 +31,97 @@ unsigned long active = LED_0_ACTIVE;
  * Currently includes debug counters.
  */
 void TC_VGA_Handler(void){
-	static int counter = 0;
 	static unsigned int sec_counter = 0;
+	//NVIC_ClearPendingIRQ(TC0_IRQn);
 	
-	if(tc_get_status(TC_VGA, TCC_HORIZONTAL) & TC_IER_CPCS){
-		tc_disable_interrupt(TC_VGA, TCC_HORIZONTAL, TC_IER_CPCS);
+	
+	if(tc_get_status(TC_VGA, TCC_VSYNC_PULSE) & TC_IER_CPCS){
+		tc_stop(TC_VGA, TCC_VSYNC_PULSE);
 		
-		ioport_set_pin_level(PIN_RED, 0);
+		ioport_set_pin_level(PIN_VSYNC, 0);
 		
-		//Enable vsync for 2 lines if we have drawn 524 lines.
-		if(counter == 0){
-			ioport_set_pin_level(PIN_VSYNC, 1);
-		}else if(counter == 2){
-			//Debug 1 second led counter.
-			sec_counter++;
-			if(sec_counter == 60){
-				active = !active;
-				ioport_set_pin_level(LED_0_PIN, active);
-				sec_counter = 0;
-			}
-			ioport_set_pin_level(PIN_VSYNC, 0);
-			
-		}else{
-			hsync:
-			ioport_set_pin_level(PIN_HSYNC, 1);
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-			ioport_set_pin_level(PIN_HSYNC, 0);
-			if(counter == 526){
-				counter = -1;
-			}
+		//Debug 1 second led counter.
+		sec_counter++;
+		if(sec_counter == 60){
+			active = !active;
+			ioport_set_pin_level(LED_0_PIN, active);
+			sec_counter = 0;
 		}
-		counter++;
+		tc_start(TC_VGA, TCC_HSYNC);
 		ioport_set_pin_level(PIN_RED, 1);
-		tc_enable_interrupt(TC_VGA, TCC_HORIZONTAL, TC_IER_CPCS);
+	}else if(tc_get_status(TC_VGA, TCC_VSYNC) & TC_IER_CPCS){
+		tc_start(TC_VGA, TCC_VSYNC_PULSE);
+		tc_stop(TC_VGA, TCC_HSYNC);
+		ioport_set_pin_level(PIN_VSYNC, 1);
+		ioport_set_pin_level(PIN_RED, 0);
+	}else if(tc_get_status(TC_VGA, TCC_HSYNC) & TC_IER_CPCS){
+		ioport_set_pin_level(PIN_HSYNC, 1);
+		ioport_set_pin_level(PIN_HSYNC, 0);
 	}
 	
+	//ioport_set_pin_level(PIN_RED, 1);
 	return;
 }
 
 int main(void){
 	board_init();
 	sysclk_init();
-	//Enable IRQ for TC0
-	NVIC_DisableIRQ(TC0_IRQn);
-	NVIC_ClearPendingIRQ(TC0_IRQn);
-	NVIC_SetPriority(TC0_IRQn, 0);
-	NVIC_EnableIRQ(TC0_IRQn);
 	
 	sysclk_enable_peripheral_clock(ID_TC0);
+	sysclk_enable_peripheral_clock(ID_TC1);
+	sysclk_enable_peripheral_clock(ID_TC2);
 	
-	//Initialize hsync clock clock.
-	tc_init(TC_VGA, TCC_HORIZONTAL, TC_CMR_TCCLKS_TIMER_CLOCK1 | TC_CMR_CPCTRG);
-	
-	//Set Compare register value to fire interrupt every 1/60/524 seconds.
+	//Initialize vsync timer.
 	tc_set_writeprotect(TC_VGA, 0);
-	tc_write_rc(TC_VGA, TCC_HORIZONTAL, 1907);
-	tc_set_writeprotect(TC_VGA, 1);
+	tc_init(TC_VGA, TCC_VSYNC, TC_CMR_TCCLKS_TIMER_CLOCK4 | TC_CMR_CPCTRG);
 	
-	//Disable all but compare interrupt.
-	tc_disable_interrupt(TC_VGA, TCC_HORIZONTAL, 0xFFFFFFFF);
-	tc_enable_interrupt(TC_VGA, TCC_HORIZONTAL, TC_IER_CPCS);
+	//Set Compare register value to fire interrupt every 1/60 seconds.
+	tc_write_rc(TC_VGA, TCC_VSYNC, 15625);
+	
+	//Enable compare interrupt.
+	tc_enable_interrupt(TC_VGA, TCC_VSYNC, TC_IER_CPCS);
+	
+	//Initialize vsync pulse length timer.
+	tc_set_writeprotect(TC_VGA, 0);
+	tc_init(TC_VGA, TCC_VSYNC_PULSE, TC_CMR_TCCLKS_TIMER_CLOCK1 | TC_CMR_CPCTRG);
+	//Set Compare register value to fire interrupt every 2/60/524 seconds(The length of 2 lines = length of vsync pulse).
+	tc_write_rc(TC_VGA, TCC_VSYNC_PULSE, 3817);
+	
+	//Enable compare interrupt.
+	tc_enable_interrupt(TC_VGA, TCC_VSYNC_PULSE, TC_IER_CPCS);
 	
 	//Setup vsync pin
 	ioport_enable_pin(PIN_VSYNC);
 	ioport_set_pin_dir(PIN_VSYNC, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_VSYNC, 0);
 	
+	//Initialize hsync timer.
+	tc_set_writeprotect(TC_VGA, 0);
+	tc_init(TC_VGA, TCC_HSYNC, TC_CMR_TCCLKS_TIMER_CLOCK1 | TC_CMR_CPCTRG);
+	//Set Compare register value to fire interrupt every 2/60/524 seconds(The length of 2 lines = length of vsync pulse).
+	tc_write_rc(TC_VGA, TCC_HSYNC, 1908);
+	
+	//Enable compare interrupt.
+	tc_enable_interrupt(TC_VGA, TCC_HSYNC, TC_IER_CPCS);
+	
 	//Setup hsync pin
 	ioport_enable_pin(PIN_HSYNC);
 	ioport_set_pin_dir(PIN_HSYNC, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_HSYNC, 0);
 	
-	//Setup hsync pin
+	
+	//Setup red pin
 	ioport_enable_pin(PIN_RED);
 	ioport_set_pin_dir(PIN_RED, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_RED, 0);
+
+	//Start vsync timer.
+	tc_start(TC_VGA, TCC_VSYNC);
 	
-	unsigned int hz = sysclk_get_main_hz();
-	hz = sysclk_get_peripheral_hz();
-	
-	//Start timer.
-	tc_start(TC_VGA, TCC_HORIZONTAL);
+	//Enable IRQ for TC0
+	NVIC_ClearPendingIRQ(TC0_IRQn);
+	NVIC_SetPriority(TC0_IRQn, 0);
+	NVIC_EnableIRQ(TC0_IRQn);
 	
 	//Main loop
 	while (1) {
