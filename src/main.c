@@ -1,22 +1,27 @@
 #include "asf.h"
-
+#define _ASSERT_ENABLE_
 //VGA Info
 //640x480 60hz
 //Field Rate: 60.04hz
 //System Clock: 120mhz - 120,000,000hz
 //Vsync Timer Speed: 120mhz/128 = 937,500hz
 //Vsync pulse: 60.04hz = 937,000/60.04 = 15,614.59
-#define VSYNC_PULSE 15615
+#define VSYNC_PULSE 15600
 
 //Vsync pulse length: 63.57mu
 //Vsync Timer Speed: 120mhz/2 = 60mhz = 60hz/mu
 //Vsync pulse length: 60x63.57 = 3,814
-#define VSYNC_PULSE_LEN 3814
+#define VSYNC_PULSE_LEN 3808
 
 //Hsync pulse: 31.46khz
 //Hsync Timer Speed: 120mhz/2 = 60mhz = 60,000khz
 //Hsync pulse length: 60,000/31.46 = 1,907.18
-#define HSYNC_PULSE 1907
+#define HSYNC_PULSE 1902//1907
+
+//Hsync pulse length: 3.81mu
+//Hsync Timer Speed: 120mhz/2 = 60mhz = 60hz/mu
+//Vsync pulse length: 60x 3.81 = 228.6
+#define HSYNC_PULSE_LEN 228
 
 //VGA Timer
 #define TC_VGA TC0
@@ -30,7 +35,7 @@
 //VSync Pin
 #define PIN_VSYNC EXT3_PIN_3
 //HSync Pin
-#define PIN_HSYNC EXT3_PIN_5
+#define PIN_HSYNC EXT3_PIN_7
 //Red Pin
 #define PIN_RED EXT3_PIN_13
 //Green Pin
@@ -46,27 +51,17 @@ unsigned long active = LED_0_ACTIVE;
 //Debug second counter.
 static unsigned int sec_counter = 0;
 
+void vsync_start(void);
+void vsync_end(void);
+void hsync(void);
+
 /** 
  * Interrupt handler for vsync signal.
  */
 void TC_VSYNC_Handler(void){
 	
 	if(tc_get_status(TC_VGA, TCC_VSYNC) & TC_IER_CPCS){
-		//Start vsync pulse
-		tc_start(TC_VGA, TCC_VSYNC_PULSE);
-		tc_stop(TC_VGA, TCC_HSYNC);
-		
-		ioport_set_pin_level(PIN_VSYNC, 0);
-		ioport_set_pin_level(PIN_HSYNC, 1);
-		
-		ioport_set_pin_level(PIN_RED, 0);
-		//Debug 1 second led counter.
-		sec_counter++;
-		if(sec_counter == 60){
-			active = !active;
-			ioport_set_pin_level(LED_0_PIN, active);
-			sec_counter = 0;
-		}
+		vsync_start();
 	}
 	
 	return;
@@ -77,13 +72,7 @@ void TC_VSYNC_Handler(void){
  */
 void TC_VSYNC_PULSE_Handler(void){
 	if(tc_get_status(TC_VGA, TCC_VSYNC_PULSE) & TC_IER_CPCS){
-		//Stop vsync pulse
-		tc_stop(TC_VGA, TCC_VSYNC_PULSE);
-		ioport_set_pin_level(PIN_VSYNC, 1);
-		
-		//Start hsync
-		hsync_counter = 0;
-		tc_start(TC_VGA, TCC_HSYNC);
+		vsync_end();
 	}
 }
 
@@ -91,40 +80,64 @@ void TC_VSYNC_PULSE_Handler(void){
  * Interrupt handler for an hsync.
  */
 void TC_HSYNC_Handler(void){
-	
 	if(tc_get_status(TC_VGA, TCC_HSYNC) & TC_IER_CPCS){
-		ioport_set_pin_level(PIN_HSYNC, 0);
-		ioport_set_pin_level(PIN_RED, 0);
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
-		
-		//Debug hsync count
-		hsync_counter++;
-		if(hsync_counter > 524){
-			hsync_counter = 0;
-			tc_stop(TC_VGA, TCC_HSYNC);
-		}
-		ioport_set_pin_level(PIN_HSYNC, 1);
-		ioport_set_pin_level(PIN_RED, 1);
+		hsync();
 	}
+}
+
+inline void vsync_start(){
+	//Start vsync pulse
+	tc_start(TC_VGA, TCC_VSYNC_PULSE);
+	tc_stop(TC_VGA, TCC_HSYNC);
+	
+	ioport_set_pin_level(PIN_VSYNC, 0);
+	//ioport_set_pin_level(PIN_HSYNC, 0);
+		
+	ioport_set_pin_level(PIN_RED, 0);
+	//Debug 1 second led counter.
+	sec_counter++;
+	if(sec_counter == 60){
+		active = !active;
+		ioport_set_pin_level(LED_0_PIN, active);
+		sec_counter = 0;
+	}
+}
+
+inline void vsync_end(){
+	//Stop vsync pulse
+	tc_stop(TC_VGA, TCC_VSYNC_PULSE);
+	ioport_set_pin_level(PIN_VSYNC, 1);
+		
+	if(hsync_counter > 524 || hsync_counter < 523){
+		if(hsync_counter != 0){
+			int x = 0;
+		}
+	}
+		
+	//Start hsync
+	hsync_counter = 0;
+	tc_start(TC_VGA, TCC_HSYNC);
+	hsync();
+}
+
+inline void hsync(){
+	ioport_set_pin_level(PIN_HSYNC, 0);
+	ioport_set_pin_level(PIN_RED, 0);
+	
+	unsigned int start_time = tc_read_cv(TC0, 0);
+	for(int i = 0; i < 18; i++){
+		asm("nop");
+	}
+	
+	unsigned int end_time = tc_read_cv(TC0, 0);
+	
+	hsync_counter++;
+	if(hsync_counter >= 524){
+		hsync_counter = 0;
+		tc_stop(TC_VGA, TCC_HSYNC);
+	}
+	ioport_set_pin_level(PIN_HSYNC, 1);
+	ioport_set_pin_level(PIN_RED, 1);
 }
 
 int main(void){
