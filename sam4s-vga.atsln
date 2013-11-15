@@ -6,11 +6,14 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
+		DebugO|ARM = DebugO|ARM
 		Release|ARM = Release|ARM
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B5C78C7E-9557-4CA4-BCA2-05F69002BE64}.Debug|ARM.ActiveCfg = Debug|ARM
 		{B5C78C7E-9557-4CA4-BCA2-05F69002BE64}.Debug|ARM.Build.0 = Debug|ARM
+		{B5C78C7E-9557-4CA4-BCA2-05F69002BE64}.DebugO|ARM.ActiveCfg = DebugO|ARM
+		{B5C78C7E-9557-4CA4-BCA2-05F69002BE64}.DebugO|ARM.Build.0 = DebugO|ARM
 		{B5C78C7E-9557-4CA4-BCA2-05F69002BE64}.Release|ARM.ActiveCfg = Release|ARM
 		{B5C78C7E-9557-4CA4-BCA2-05F69002BE64}.Release|ARM.Build.0 = Release|ARM
 	EndGlobalSection

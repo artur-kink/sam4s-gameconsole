@@ -1,22 +1,31 @@
 #include "asf.h"
 #define _ASSERT_ENABLE_
+
+//Sleep 5 cycles.
+#define SLEEP5 asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+#define SLEEP10 SLEEP5 SLEEP5
+#define SLEEP20 SLEEP10 SLEEP10
+#define SLEEP50 SLEEP10 SLEEP10 SLEEP10 SLEEP10 SLEEP10
+#define SLEEP100 SLEEP50 SLEEP50
+#define SLEEP200 SLEEP100 SLEEP100
+
 //VGA Info
 //640x480 60hz
 //Field Rate: 60.04hz
 //System Clock: 120mhz - 120,000,000hz
 //Vsync Timer Speed: 120mhz/128 = 937,500hz
 //Vsync pulse: 60.04hz = 937,000/60.04 = 15,614.59
-#define VSYNC_PULSE 15600
+#define VSYNC_PULSE 15614
 
 //Vsync pulse length: 63.57mu
 //Vsync Timer Speed: 120mhz/2 = 60mhz = 60hz/mu
 //Vsync pulse length: 60x63.57 = 3,814
-#define VSYNC_PULSE_LEN 3808
+#define VSYNC_PULSE_LEN 3814
 
 //Hsync pulse: 31.46khz
 //Hsync Timer Speed: 120mhz/2 = 60mhz = 60,000khz
 //Hsync pulse length: 60,000/31.46 = 1,907.18
-#define HSYNC_PULSE 1902//1907
+#define HSYNC_PULSE 1907//1907
 
 //Hsync pulse length: 3.81mu
 //Hsync Timer Speed: 120mhz/2 = 60mhz = 60hz/mu
@@ -35,11 +44,11 @@
 //VSync Pin
 #define PIN_VSYNC EXT3_PIN_3
 //HSync Pin
-#define PIN_HSYNC EXT3_PIN_7
+#define PIN_HSYNC EXT3_PIN_5
 //Red Pin
-#define PIN_RED EXT3_PIN_13
+#define PIN_RED EXT3_PIN_9
 //Green Pin
-#define PIN_GREEN EXT3_PIN_15
+#define PIN_GREEN EXT3_PIN_13
 //Blue Pin
 #define PIN_BLUE EXT3_PIN_17
 
@@ -63,7 +72,6 @@ void TC_VSYNC_Handler(void){
 	if(tc_get_status(TC_VGA, TCC_VSYNC) & TC_IER_CPCS){
 		vsync_start();
 	}
-	
 	return;
 }
 
@@ -74,6 +82,7 @@ void TC_VSYNC_PULSE_Handler(void){
 	if(tc_get_status(TC_VGA, TCC_VSYNC_PULSE) & TC_IER_CPCS){
 		vsync_end();
 	}
+	return;
 }
 
 /** 
@@ -83,16 +92,14 @@ void TC_HSYNC_Handler(void){
 	if(tc_get_status(TC_VGA, TCC_HSYNC) & TC_IER_CPCS){
 		hsync();
 	}
+	return;
 }
 
-inline void vsync_start(){
+void vsync_start(){
 	//Start vsync pulse
 	tc_start(TC_VGA, TCC_VSYNC_PULSE);
-	tc_stop(TC_VGA, TCC_HSYNC);
-	
 	ioport_set_pin_level(PIN_VSYNC, 0);
-	//ioport_set_pin_level(PIN_HSYNC, 0);
-		
+	
 	ioport_set_pin_level(PIN_RED, 0);
 	//Debug 1 second led counter.
 	sec_counter++;
@@ -103,41 +110,41 @@ inline void vsync_start(){
 	}
 }
 
-inline void vsync_end(){
+void vsync_end(){
 	//Stop vsync pulse
 	tc_stop(TC_VGA, TCC_VSYNC_PULSE);
 	ioport_set_pin_level(PIN_VSYNC, 1);
-		
-	if(hsync_counter > 524 || hsync_counter < 523){
-		if(hsync_counter != 0){
-			int x = 0;
-		}
-	}
-		
+	
 	//Start hsync
 	hsync_counter = 0;
 	tc_start(TC_VGA, TCC_HSYNC);
 	hsync();
 }
-
-inline void hsync(){
+static int is_red = 1;
+void hsync(){
 	ioport_set_pin_level(PIN_HSYNC, 0);
-	ioport_set_pin_level(PIN_RED, 0);
 	
-	unsigned int start_time = tc_read_cv(TC0, 0);
-	for(int i = 0; i < 18; i++){
-		asm("nop");
+	SLEEP200
+	SLEEP200
+	SLEEP20
+	SLEEP20
+	SLEEP10
+	
+	ioport_set_pin_level(PIN_HSYNC, 1);
+	
+	for(int i = 0; i < 190; i++){
+		is_red = !is_red;
+		ioport_set_pin_level(PIN_RED, is_red);
 	}
-	
-	unsigned int end_time = tc_read_cv(TC0, 0);
+	//is_red = !is_red;
+	ioport_set_pin_level(PIN_RED, 0);
 	
 	hsync_counter++;
 	if(hsync_counter >= 524){
-		hsync_counter = 0;
 		tc_stop(TC_VGA, TCC_HSYNC);
 	}
-	ioport_set_pin_level(PIN_HSYNC, 1);
-	ioport_set_pin_level(PIN_RED, 1);
+	
+	return;
 }
 
 int main(void){
@@ -188,10 +195,7 @@ int main(void){
 	ioport_set_pin_dir(PIN_RED, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_RED, 0);
 
-	
-	//tc_start(TC_VGA, TCC_HSYNC);
-	
-	//Enable IRQ for TC0
+	//Enable IRQ
 	NVIC_ClearPendingIRQ(TC0_IRQn);
 	NVIC_SetPriority(TC0_IRQn, 0);
 	NVIC_SetPriority(TC1_IRQn, 0);
@@ -208,3 +212,4 @@ int main(void){
 		asm("nop");
 	}
 }
+
