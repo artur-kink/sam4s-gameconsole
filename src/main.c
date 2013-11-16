@@ -1,5 +1,4 @@
 #include "asf.h"
-#define _ASSERT_ENABLE_
 
 //Macro to sleep 5 clock cycles.
 #define SLEEP5 asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
@@ -50,12 +49,23 @@
 #define PIN_VSYNC EXT3_PIN_3
 //HSync Pin
 #define PIN_HSYNC EXT3_PIN_5
+
+//RGB port, The port where the rgb pins are.
+static Pio* rgb_port;
+
 //Red Pin
-#define PIN_RED EXT3_PIN_9
+#define PIN_RED EXT3_PIN_11
 //Green Pin
-#define PIN_GREEN EXT3_PIN_13
+#define PIN_GREEN EXT3_PIN_12
 //Blue Pin
-#define PIN_BLUE EXT3_PIN_17
+#define PIN_BLUE EXT3_PIN_13
+
+//Bitmask for Red
+#define COLOR_RED 16
+//Bitmask for Green
+#define COLOR_GREEN 32
+//Bitmask for Blue
+#define COLOR_BLUE 4
 
 //Height of screen, the number of lines.
 #define SCREEN_HEIGHT 180
@@ -63,7 +73,7 @@
 #define SCREEN_WIDTH 266
 
 //Screen pixel buffer.
-unsigned char pixel_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
+unsigned short pixel_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
 //Horizontal sync counter.
 static int hsync_counter = 0;
@@ -85,8 +95,7 @@ void TC_VSYNC_Handler(void){
 		//Start vsync pulse
 		tc_start(TC_VGA, TCC_VSYNC_PULSE);
 		ioport_set_pin_level(PIN_VSYNC, 0);
-	
-		ioport_set_pin_level(PIN_RED, 0);
+		
 		//Debug 1 second led counter.
 		sec_counter++;
 		if(sec_counter == 60){
@@ -140,13 +149,16 @@ void hsync(){
 	ioport_set_pin_level(PIN_HSYNC, 1);
 	
 	//Blit pixel buffer.
-	int line = hsync_counter/3;
-	for(int i = 0; i < 125; i++){
-		ioport_set_pin_level(PIN_RED, (pixel_buffer[line][i]>>2)&0x01);
-		ioport_set_pin_level(PIN_BLUE, pixel_buffer[line][i]&0x01);
+	int line = hsync_counter/4;
+	for(int i = 0; i < 185; i++){
+		//Blit pixel colors.
+		unsigned char pixel = pixel_buffer[line][i];
+		rgb_port->PIO_ODSR = ((pixel & COLOR_RED) | (pixel & COLOR_GREEN) | (pixel & COLOR_BLUE));
 	}
+	
 	//Disable any colors in use.
 	ioport_set_pin_level(PIN_RED, 0);
+	ioport_set_pin_level(PIN_GREEN, 0);
 	ioport_set_pin_level(PIN_BLUE, 0);
 	
 	//If we have drawn 524+ lines, disable hsync timer.
@@ -156,6 +168,28 @@ void hsync(){
 	}
 	
 	return;
+}
+
+/** 
+ * Main system loop.
+ */
+static void system_loop(){
+	static int i = 0;
+	static int j = 0;
+	while(1){
+		
+		//Sample test code to edit pixel buffer.
+		if(i >= SCREEN_WIDTH - 1)
+			i = 0;
+		
+		if(j >= SCREEN_HEIGHT - 1)
+			j = 0;
+	
+		pixel_buffer[j][i]+= 0xFFF;
+		
+		i++;
+		j++;
+	}
 }
 
 int main(void){
@@ -201,17 +235,21 @@ int main(void){
 	ioport_enable_pin(PIN_HSYNC);
 	ioport_set_pin_dir(PIN_HSYNC, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_HSYNC, 0);
-	
+
+	//Get RGB port, all rgb pins should be on the same port.
+	rgb_port = arch_ioport_pin_to_base(PIN_RED);
+
 	//Setup red pin
 	ioport_enable_pin(PIN_RED);
 	ioport_set_pin_dir(PIN_RED, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_RED, 0);
-
+	
+	
 	//Setup green pin
 	ioport_enable_pin(PIN_GREEN);
 	ioport_set_pin_dir(PIN_GREEN, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_GREEN, 0);
-	
+
 	//Setup blue pin
 	ioport_enable_pin(PIN_BLUE);
 	ioport_set_pin_dir(PIN_BLUE, IOPORT_DIR_OUTPUT);
@@ -229,30 +267,12 @@ int main(void){
 	//Initialize pixel buffer.
 	for(int r = 0; r < SCREEN_HEIGHT; r++){
 		for(int c = 0; c < SCREEN_WIDTH; c++){
-			pixel_buffer[r][c] = 1;
+			pixel_buffer[r][c] = 0;
 		}
 	}
 	
 	//Start vsync timer.
 	tc_start(TC_VGA, TCC_VSYNC);
 	
-	int i = 0;
-	int j = 0;
-	//Main loop
-	while (1) {
-		//Sample test code to edit pixel buffer.
-		SLEEP200
-		SLEEP200
-		if(i >= SCREEN_WIDTH - 1)
-			i = 0;
-		
-		if(j >= SCREEN_HEIGHT - 1)
-			j = 0;
-		pixel_buffer[j][i]++;
-		
-		i++;
-		j++;
-	
-	}
+	system_loop();
 }
-
