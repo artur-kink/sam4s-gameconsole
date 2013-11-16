@@ -1,7 +1,9 @@
 #include "asf.h"
 
-//Macro to sleep 5 clock cycles.
-#define SLEEP5 asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+//Macro to sleep 1 clock cycle.
+#define SLEEP1 asm("nop");
+//Sleep 5 clock cycles.
+#define SLEEP5 SLEEP1 SLEEP1 SLEEP1 SLEEP1 SLEEP1
 //Sleep 10 clock cycles.
 #define SLEEP10 SLEEP5 SLEEP5
 //Sleep 20 clock cycles.
@@ -54,18 +56,25 @@
 static Pio* rgb_port;
 
 //Red Pin
-#define PIN_RED EXT3_PIN_11
+#define PIN_RED EXT2_PIN_3
 //Green Pin
-#define PIN_GREEN EXT3_PIN_12
+#define PIN_GREEN EXT2_PIN_4
 //Blue Pin
 #define PIN_BLUE EXT3_PIN_13
 
 //Bitmask for Red
-#define COLOR_RED 16
+#define COLOR_RED 1
 //Bitmask for Green
-#define COLOR_GREEN 32
+#define COLOR_GREEN 2
 //Bitmask for Blue
 #define COLOR_BLUE 4
+
+//Bitmasks for additive colors.
+#define COLOR_MAGENTA (COLOR_RED + COLOR_BLUE)
+#define COLOR_TEAL (COLOR_GREEN + COLOR_BLUE)
+#define COLOR_YELLOW (COLOR_RED + COLOR_GREEN)
+#define COLOR_WHITE (COLOR_RED + COLOR_GREEN + COLOR_BLUE)
+#define COLOR_BLACK 0
 
 //Height of screen, the number of lines.
 #define SCREEN_HEIGHT 180
@@ -150,10 +159,12 @@ void hsync(){
 	
 	//Blit pixel buffer.
 	int line = hsync_counter/4;
-	for(int i = 0; i < 185; i++){
+	for(int i = 0; i < 200; i++){
 		//Blit pixel colors.
 		unsigned char pixel = pixel_buffer[line][i];
-		rgb_port->PIO_ODSR = ((pixel & COLOR_RED) | (pixel & COLOR_GREEN) | (pixel & COLOR_BLUE));
+		rgb_port->PIO_ODSR = pixel;
+		SLEEP5
+		SLEEP1 SLEEP1
 	}
 	
 	//Disable any colors in use.
@@ -177,6 +188,7 @@ static void system_loop(){
 	static int i = 0;
 	static int j = 0;
 	while(1){
+		SLEEP200
 		
 		//Sample test code to edit pixel buffer.
 		if(i >= SCREEN_WIDTH - 1)
@@ -185,7 +197,7 @@ static void system_loop(){
 		if(j >= SCREEN_HEIGHT - 1)
 			j = 0;
 	
-		pixel_buffer[j][i]+= 0xFFF;
+		pixel_buffer[j][i]+= 0x1;
 		
 		i++;
 		j++;
