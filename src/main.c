@@ -1,12 +1,17 @@
 #include "asf.h"
 #define _ASSERT_ENABLE_
 
-//Sleep 5 cycles.
+//Macro to sleep 5 clock cycles.
 #define SLEEP5 asm("nop");asm("nop");asm("nop");asm("nop");asm("nop");
+//Sleep 10 clock cycles.
 #define SLEEP10 SLEEP5 SLEEP5
+//Sleep 20 clock cycles.
 #define SLEEP20 SLEEP10 SLEEP10
-#define SLEEP50 SLEEP10 SLEEP10 SLEEP10 SLEEP10 SLEEP10
+//Sleep 50 clock cycles.
+#define SLEEP50 SLEEP20 SLEEP20 SLEEP10
+//Sleep 100 clock cycles.
 #define SLEEP100 SLEEP50 SLEEP50
+//Sleep 200 clock cycles.
 #define SLEEP200 SLEEP100 SLEEP100
 
 //VGA Info
@@ -52,6 +57,14 @@
 //Blue Pin
 #define PIN_BLUE EXT3_PIN_17
 
+//Height of screen, the number of lines.
+#define SCREEN_HEIGHT 180
+//Width of screen, number of pixels per line.
+#define SCREEN_WIDTH 266
+
+//Screen pixel buffer.
+unsigned char pixel_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
+
 //Horizontal sync counter.
 static int hsync_counter = 0;
 
@@ -60,27 +73,45 @@ unsigned long active = LED_0_ACTIVE;
 //Debug second counter.
 static unsigned int sec_counter = 0;
 
-void vsync_start(void);
-void vsync_end(void);
 void hsync(void);
 
 /** 
- * Interrupt handler for vsync signal.
+ * Interrupt handler for a vsync signal.
+ * Starts a vsync pulse.
  */
 void TC_VSYNC_Handler(void){
 	
 	if(tc_get_status(TC_VGA, TCC_VSYNC) & TC_IER_CPCS){
-		vsync_start();
+		//Start vsync pulse
+		tc_start(TC_VGA, TCC_VSYNC_PULSE);
+		ioport_set_pin_level(PIN_VSYNC, 0);
+	
+		ioport_set_pin_level(PIN_RED, 0);
+		//Debug 1 second led counter.
+		sec_counter++;
+		if(sec_counter == 60){
+			active = !active;
+			ioport_set_pin_level(LED_0_PIN, active);
+			sec_counter = 0;
+		}
 	}
 	return;
 }
 
 /** 
  * Interrupt handler for vsync signal end.
+ * Disables vsync pulse and starts hsyncs.
  */
 void TC_VSYNC_PULSE_Handler(void){
 	if(tc_get_status(TC_VGA, TCC_VSYNC_PULSE) & TC_IER_CPCS){
-		vsync_end();
+		//Stop vsync pulse
+		tc_stop(TC_VGA, TCC_VSYNC_PULSE);
+		ioport_set_pin_level(PIN_VSYNC, 1);
+		
+		//Start hsync
+		hsync_counter = 0;
+		tc_start(TC_VGA, TCC_HSYNC);
+		hsync();
 	}
 	return;
 }
@@ -95,50 +126,30 @@ void TC_HSYNC_Handler(void){
 	return;
 }
 
-void vsync_start(){
-	//Start vsync pulse
-	tc_start(TC_VGA, TCC_VSYNC_PULSE);
-	ioport_set_pin_level(PIN_VSYNC, 0);
-	
-	ioport_set_pin_level(PIN_RED, 0);
-	//Debug 1 second led counter.
-	sec_counter++;
-	if(sec_counter == 60){
-		active = !active;
-		ioport_set_pin_level(LED_0_PIN, active);
-		sec_counter = 0;
-	}
-}
-
-void vsync_end(){
-	//Stop vsync pulse
-	tc_stop(TC_VGA, TCC_VSYNC_PULSE);
-	ioport_set_pin_level(PIN_VSYNC, 1);
-	
-	//Start hsync
-	hsync_counter = 0;
-	tc_start(TC_VGA, TCC_HSYNC);
-	hsync();
-}
-static int is_red = 1;
+/** 
+ * hsync handler, draws one horizontal line.
+ */
 void hsync(){
+	//Enable hsync pulse.
 	ioport_set_pin_level(PIN_HSYNC, 0);
-	
 	SLEEP200
 	SLEEP200
 	SLEEP20
 	SLEEP20
 	SLEEP10
-	
 	ioport_set_pin_level(PIN_HSYNC, 1);
 	
-	for(int i = 0; i < 190; i++){
-		is_red = !is_red;
-		ioport_set_pin_level(PIN_RED, is_red);
+	//Blit pixel buffer.
+	int line = hsync_counter/3;
+	for(int i = 0; i < 125; i++){
+		ioport_set_pin_level(PIN_RED, (pixel_buffer[line][i]>>2)&0x01);
+		ioport_set_pin_level(PIN_BLUE, pixel_buffer[line][i]&0x01);
 	}
-	//is_red = !is_red;
+	//Disable any colors in use.
 	ioport_set_pin_level(PIN_RED, 0);
+	ioport_set_pin_level(PIN_BLUE, 0);
 	
+	//If we have drawn 524+ lines, disable hsync timer.
 	hsync_counter++;
 	if(hsync_counter >= 524){
 		tc_stop(TC_VGA, TCC_HSYNC);
@@ -148,9 +159,11 @@ void hsync(){
 }
 
 int main(void){
+	//Init system using ASF.
 	board_init();
 	sysclk_init();
 	
+	//Enable timer clocks.
 	sysclk_enable_peripheral_clock(ID_TC0);
 	sysclk_enable_peripheral_clock(ID_TC1);
 	sysclk_enable_peripheral_clock(ID_TC2);
@@ -189,13 +202,22 @@ int main(void){
 	ioport_set_pin_dir(PIN_HSYNC, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_HSYNC, 0);
 	
-	
 	//Setup red pin
 	ioport_enable_pin(PIN_RED);
 	ioport_set_pin_dir(PIN_RED, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_RED, 0);
 
-	//Enable IRQ
+	//Setup green pin
+	ioport_enable_pin(PIN_GREEN);
+	ioport_set_pin_dir(PIN_GREEN, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_GREEN, 0);
+	
+	//Setup blue pin
+	ioport_enable_pin(PIN_BLUE);
+	ioport_set_pin_dir(PIN_BLUE, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_BLUE, 0);
+
+	//Enable IRQ for timers.
 	NVIC_ClearPendingIRQ(TC0_IRQn);
 	NVIC_SetPriority(TC0_IRQn, 0);
 	NVIC_SetPriority(TC1_IRQn, 0);
@@ -204,12 +226,33 @@ int main(void){
 	NVIC_EnableIRQ(TC1_IRQn);
 	NVIC_EnableIRQ(TC2_IRQn);
 	
+	//Initialize pixel buffer.
+	for(int r = 0; r < SCREEN_HEIGHT; r++){
+		for(int c = 0; c < SCREEN_WIDTH; c++){
+			pixel_buffer[r][c] = 1;
+		}
+	}
+	
 	//Start vsync timer.
 	tc_start(TC_VGA, TCC_VSYNC);
 	
+	int i = 0;
+	int j = 0;
 	//Main loop
 	while (1) {
-		asm("nop");
+		//Sample test code to edit pixel buffer.
+		SLEEP200
+		SLEEP200
+		if(i >= SCREEN_WIDTH - 1)
+			i = 0;
+		
+		if(j >= SCREEN_HEIGHT - 1)
+			j = 0;
+		pixel_buffer[j][i]++;
+		
+		i++;
+		j++;
+	
 	}
 }
 
