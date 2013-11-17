@@ -49,18 +49,27 @@
 
 //VSync Pin
 #define PIN_VSYNC EXT3_PIN_3
+
 //HSync Pin
 #define PIN_HSYNC EXT3_PIN_5
+//Hsync port
+static Pio* hsync_port;
+//Hsync pin mask in port
+static unsigned int hsync_mask;
 
 //RGB port, The port where the rgb pins are.
 static Pio* rgb_port;
+static unsigned int rgb_mask;
 
 //Red Pin
 #define PIN_RED EXT2_PIN_3
+static unsigned int red_mask;
 //Green Pin
 #define PIN_GREEN EXT2_PIN_4
+static unsigned int green_mask;
 //Blue Pin
 #define PIN_BLUE EXT3_PIN_13
+static unsigned int blue_mask;
 
 //Bitmask for Red
 #define COLOR_RED 1
@@ -77,12 +86,16 @@ static Pio* rgb_port;
 #define COLOR_BLACK 0
 
 //Height of screen, the number of lines.
-#define SCREEN_HEIGHT 180
+#define SCREEN_HEIGHT 240
 //Width of screen, number of pixels per line.
-#define SCREEN_WIDTH 266
+#define SCREEN_WIDTH 320
 
 //Screen pixel buffer.
-unsigned short pixel_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
+unsigned char pixel_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
+
+//Vsync porch status.
+enum porch_status{front_porch, body, back_porch};
+enum porch_status vsync_porch;
 
 //Horizontal sync counter.
 static int hsync_counter = 0;
@@ -125,9 +138,8 @@ void TC_VSYNC_PULSE_Handler(void){
 		//Stop vsync pulse
 		tc_stop(TC_VGA, TCC_VSYNC_PULSE);
 		ioport_set_pin_level(PIN_VSYNC, 1);
-		
-		//Start hsync
 		hsync_counter = 0;
+		//Start hsync
 		tc_start(TC_VGA, TCC_HSYNC);
 		hsync();
 	}
@@ -149,28 +161,41 @@ void TC_HSYNC_Handler(void){
  */
 void hsync(){
 	//Enable hsync pulse.
-	ioport_set_pin_level(PIN_HSYNC, 0);
+	hsync_port->PIO_CODR = hsync_mask;
 	SLEEP200
 	SLEEP200
 	SLEEP20
 	SLEEP20
 	SLEEP10
-	ioport_set_pin_level(PIN_HSYNC, 1);
+	SLEEP5
+	hsync_port->PIO_SODR = hsync_mask;
+	
+	#define BLIT_PIXEL(pixel) rgb_port->PIO_ODSR = *pixel; pixel++; SLEEP5
+	#define BLIT_5_PIXELS(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel)
+	#define BLIT_25_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel)
+	#define BLIT_100_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel)
+	
+	SLEEP200
+	SLEEP100
+	SLEEP20
 	
 	//Blit pixel buffer.
-	int line = hsync_counter/4;
-	for(int i = 0; i < 200; i++){
-		//Blit pixel colors.
-		unsigned char pixel = pixel_buffer[line][i];
-		rgb_port->PIO_ODSR = pixel;
-		SLEEP5
-		SLEEP1 SLEEP1
-	}
+	int line = hsync_counter/2;
+	unsigned char* pixel = pixel_buffer[line];
+	
+	BLIT_100_PIXELS(pixel)
+	BLIT_100_PIXELS(pixel)
+	BLIT_100_PIXELS(pixel)
+	BLIT_5_PIXELS(pixel)
+	BLIT_5_PIXELS(pixel)
+	BLIT_5_PIXELS(pixel)
+	BLIT_5_PIXELS(pixel)
 	
 	//Disable any colors in use.
-	ioport_set_pin_level(PIN_RED, 0);
-	ioport_set_pin_level(PIN_GREEN, 0);
-	ioport_set_pin_level(PIN_BLUE, 0);
+	rgb_port->PIO_CODR = rgb_mask;
+	
+	SLEEP100
+	SLEEP50
 	
 	//If we have drawn 524+ lines, disable hsync timer.
 	hsync_counter++;
@@ -247,6 +272,8 @@ int main(void){
 	ioport_enable_pin(PIN_HSYNC);
 	ioport_set_pin_dir(PIN_HSYNC, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_HSYNC, 0);
+	hsync_port = arch_ioport_pin_to_base(PIN_HSYNC);
+	hsync_mask = arch_ioport_pin_to_mask(PIN_HSYNC);
 
 	//Get RGB port, all rgb pins should be on the same port.
 	rgb_port = arch_ioport_pin_to_base(PIN_RED);
@@ -255,17 +282,21 @@ int main(void){
 	ioport_enable_pin(PIN_RED);
 	ioport_set_pin_dir(PIN_RED, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_RED, 0);
-	
+	red_mask = arch_ioport_pin_to_mask(PIN_RED);
 	
 	//Setup green pin
 	ioport_enable_pin(PIN_GREEN);
 	ioport_set_pin_dir(PIN_GREEN, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_GREEN, 0);
-
+	green_mask = arch_ioport_pin_to_mask(PIN_GREEN);
+	
 	//Setup blue pin
 	ioport_enable_pin(PIN_BLUE);
 	ioport_set_pin_dir(PIN_BLUE, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_level(PIN_BLUE, 0);
+	blue_mask = arch_ioport_pin_to_mask(PIN_BLUE);
+
+	rgb_mask = red_mask | green_mask | blue_mask;
 
 	//Enable IRQ for timers.
 	NVIC_ClearPendingIRQ(TC0_IRQn);
