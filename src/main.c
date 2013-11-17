@@ -93,9 +93,9 @@ static unsigned int blue_mask;
 //Screen pixel buffer.
 unsigned char pixel_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
-//Vsync porch status.
-enum porch_status{front_porch, body, back_porch};
-enum porch_status vsync_porch;
+//Vsync porch counts
+#define VSYNC_FRONT_PORCH 11
+#define VSYNC_BACK_PORCH 524-31
 
 //Horizontal sync counter.
 static int hsync_counter = 0;
@@ -170,19 +170,32 @@ void hsync(){
 	SLEEP5
 	hsync_port->PIO_SODR = hsync_mask;
 	
-	#define BLIT_PIXEL(pixel) rgb_port->PIO_ODSR = *pixel; pixel++; SLEEP5
-	#define BLIT_5_PIXELS(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel)
-	#define BLIT_25_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel)
-	#define BLIT_100_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel)
+	hsync_counter++;
+	//If we have drawn 524+ lines, disable hsync timer.
+	if(hsync_counter >= 524){
+		tc_stop(TC_VGA, TCC_HSYNC);
+	}
+	//Check back porch first so both expressions are always evaluated.
+	if(hsync_counter > VSYNC_BACK_PORCH || hsync_counter < VSYNC_FRONT_PORCH){
+		return;
+	}
+
+//Blits one pixel.
+#define BLIT_PIXEL(pixel) rgb_port->PIO_ODSR = *pixel; pixel++; SLEEP5
+//Macros to blit multiple pixels, Instead of loop we write out all pixels
+//to reduce overhead of loops.
+#define BLIT_5_PIXELS(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel)
+#define BLIT_25_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel) BLIT_5_PIXELS(pixel)
+#define BLIT_100_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel) BLIT_25_PIXELS(pixel)
 	
+	int line = (hsync_counter - VSYNC_FRONT_PORCH)/2;
+	unsigned char* pixel = pixel_buffer[line];
+	
+	//Horizontal front porch.
 	SLEEP200
-	SLEEP100
 	SLEEP20
 	
 	//Blit pixel buffer.
-	int line = hsync_counter/2;
-	unsigned char* pixel = pixel_buffer[line];
-	
 	BLIT_100_PIXELS(pixel)
 	BLIT_100_PIXELS(pixel)
 	BLIT_100_PIXELS(pixel)
@@ -194,14 +207,9 @@ void hsync(){
 	//Disable any colors in use.
 	rgb_port->PIO_CODR = rgb_mask;
 	
-	SLEEP100
-	SLEEP50
-	
-	//If we have drawn 524+ lines, disable hsync timer.
-	hsync_counter++;
-	if(hsync_counter >= 524){
-		tc_stop(TC_VGA, TCC_HSYNC);
-	}
+	//Horizontal back porch, exists for debug reasons.
+	//SLEEP100
+	//SLEEP20
 	
 	return;
 }
@@ -213,7 +221,7 @@ static void system_loop(){
 	static int i = 0;
 	static int j = 0;
 	while(1){
-		SLEEP200
+		//SLEEP200
 		
 		//Sample test code to edit pixel buffer.
 		if(i >= SCREEN_WIDTH - 1)
