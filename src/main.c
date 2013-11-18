@@ -94,8 +94,8 @@ static unsigned int blue_mask;
 unsigned char pixel_buffer[SCREEN_HEIGHT][SCREEN_WIDTH];
 
 //Vsync porch counts
-#define VSYNC_FRONT_PORCH 11
-#define VSYNC_BACK_PORCH 524-31
+#define VSYNC_FRONT_PORCH 12
+#define VSYNC_BACK_PORCH 524-32
 
 //Horizontal sync counter.
 static int hsync_counter = 0;
@@ -176,7 +176,7 @@ void hsync(){
 		tc_stop(TC_VGA, TCC_HSYNC);
 	}
 	//Check back porch first so both expressions are always evaluated.
-	if(hsync_counter > VSYNC_BACK_PORCH || hsync_counter < VSYNC_FRONT_PORCH){
+	if(hsync_counter >= VSYNC_BACK_PORCH || hsync_counter < VSYNC_FRONT_PORCH){
 		return;
 	}
 
