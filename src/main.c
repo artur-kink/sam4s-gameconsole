@@ -61,22 +61,34 @@ static unsigned int hsync_mask;
 static Pio* rgb_port;
 static unsigned int rgb_mask;
 
-//Red Pin
-#define PIN_RED EXT2_PIN_3
-static unsigned int red_mask;
-//Green Pin
-#define PIN_GREEN EXT2_PIN_4
-static unsigned int green_mask;
-//Blue Pin
-#define PIN_BLUE EXT3_PIN_13
-static unsigned int blue_mask;
+//Red Pins
+#define PIN_RED_1 EXT1_PIN_5
+static unsigned int red_mask_1;
+#define PIN_RED_2 EXT1_PIN_7
+static unsigned int red_mask_2;
+#define PIN_RED_3 EXT2_PIN_14
+static unsigned int red_mask_3;
+
+//Green Pins
+#define PIN_GREEN_1 EXT2_PIN_13
+static unsigned int green_mask_1;
+#define PIN_GREEN_2 EXT2_PIN_8
+static unsigned int green_mask_2;
+#define PIN_GREEN_3 EXT1_PIN_8
+static unsigned int green_mask_3;
+
+//Blue Pins
+#define PIN_BLUE_1 EXT1_PIN_4
+static unsigned int blue_mask_1;
+#define PIN_BLUE_2 EXT1_PIN_3
+static unsigned int blue_mask_2;
 
 //Bitmask for Red
-#define COLOR_RED 1
+#define COLOR_RED 32+64+128
 //Bitmask for Green
-#define COLOR_GREEN 2
+#define COLOR_GREEN 4+8+16
 //Bitmask for Blue
-#define COLOR_BLUE 4
+#define COLOR_BLUE 1+2
 
 //Bitmasks for additive colors.
 #define COLOR_MAGENTA (COLOR_RED + COLOR_BLUE)
@@ -181,7 +193,7 @@ void hsync(){
 	}
 
 //Blits one pixel.
-#define BLIT_PIXEL(pixel) rgb_port->PIO_ODSR = *pixel; pixel++; SLEEP5
+#define BLIT_PIXEL(pixel) rgb_port->PIO_ODSR = (*pixel)<<17; pixel++; SLEEP1 SLEEP1 SLEEP1 SLEEP1
 //Macros to blit multiple pixels, Instead of loop we write out all pixels
 //to reduce overhead of loops.
 #define BLIT_5_PIXELS(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel)
@@ -284,27 +296,48 @@ int main(void){
 	hsync_mask = arch_ioport_pin_to_mask(PIN_HSYNC);
 
 	//Get RGB port, all rgb pins should be on the same port.
-	rgb_port = arch_ioport_pin_to_base(PIN_RED);
+	rgb_port = arch_ioport_pin_to_base(PIN_RED_1);
 
-	//Setup red pin
-	ioport_enable_pin(PIN_RED);
-	ioport_set_pin_dir(PIN_RED, IOPORT_DIR_OUTPUT);
-	ioport_set_pin_level(PIN_RED, 0);
-	red_mask = arch_ioport_pin_to_mask(PIN_RED);
+	//Setup red pins
+	ioport_enable_pin(PIN_RED_1);
+	ioport_set_pin_dir(PIN_RED_1, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_RED_1, 0);
+	red_mask_1 = arch_ioport_pin_to_mask(PIN_RED_1);
+	ioport_enable_pin(PIN_RED_2);
+	ioport_set_pin_dir(PIN_RED_2, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_RED_2, 0);
+	red_mask_2 = arch_ioport_pin_to_mask(PIN_RED_2);
+	ioport_enable_pin(PIN_RED_3);
+	ioport_set_pin_dir(PIN_RED_3, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_RED_3, 0);
+	red_mask_3 = arch_ioport_pin_to_mask(PIN_RED_3);
 	
-	//Setup green pin
-	ioport_enable_pin(PIN_GREEN);
-	ioport_set_pin_dir(PIN_GREEN, IOPORT_DIR_OUTPUT);
-	ioport_set_pin_level(PIN_GREEN, 0);
-	green_mask = arch_ioport_pin_to_mask(PIN_GREEN);
+	//Setup green pins
+	ioport_enable_pin(PIN_GREEN_1);
+	ioport_set_pin_dir(PIN_GREEN_1, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_GREEN_1, 0);
+	green_mask_1 = arch_ioport_pin_to_mask(PIN_GREEN_1);
+	ioport_enable_pin(PIN_GREEN_2);
+	ioport_set_pin_dir(PIN_GREEN_2, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_GREEN_2, 0);
+	green_mask_2 = arch_ioport_pin_to_mask(PIN_GREEN_2);
+	ioport_enable_pin(PIN_GREEN_3);
+	ioport_set_pin_dir(PIN_GREEN_3, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_GREEN_3, 0);
+	green_mask_3 = arch_ioport_pin_to_mask(PIN_GREEN_3);
 	
-	//Setup blue pin
-	ioport_enable_pin(PIN_BLUE);
-	ioport_set_pin_dir(PIN_BLUE, IOPORT_DIR_OUTPUT);
-	ioport_set_pin_level(PIN_BLUE, 0);
-	blue_mask = arch_ioport_pin_to_mask(PIN_BLUE);
+	//Setup blue pins
+	ioport_enable_pin(PIN_BLUE_1);
+	ioport_set_pin_dir(PIN_BLUE_1, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_BLUE_1, 0);
+	blue_mask_1 = arch_ioport_pin_to_mask(PIN_BLUE_1);
+	ioport_enable_pin(PIN_BLUE_2);
+	ioport_set_pin_dir(PIN_BLUE_2, IOPORT_DIR_OUTPUT);
+	ioport_set_pin_level(PIN_BLUE_2, 0);
+	blue_mask_2 = arch_ioport_pin_to_mask(PIN_BLUE_2);
 
-	rgb_mask = red_mask | green_mask | blue_mask;
+	rgb_mask = red_mask_3 | red_mask_2 | red_mask_1 | green_mask_3
+	| green_mask_2 | green_mask_1 | blue_mask_2 | blue_mask_1;
 
 	//Enable IRQ for timers.
 	NVIC_ClearPendingIRQ(TC0_IRQn);
