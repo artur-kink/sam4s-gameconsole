@@ -193,7 +193,7 @@ void hsync(){
 	}
 
 //Blits one pixel.
-#define BLIT_PIXEL(pixel) rgb_port->PIO_ODSR = (*pixel)<<17; pixel++; SLEEP1 SLEEP1 SLEEP1 SLEEP1
+#define BLIT_PIXEL(pixel) rgb_port->PIO_ODSR = (*pixel)<<17; pixel++; SLEEP1 SLEEP1 SLEEP1
 //Macros to blit multiple pixels, Instead of loop we write out all pixels
 //to reduce overhead of loops.
 #define BLIT_5_PIXELS(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel) BLIT_PIXEL(pixel)
