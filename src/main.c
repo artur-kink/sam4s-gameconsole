@@ -249,11 +249,10 @@ static void system_loop(){
 	}
 }
 
-int main(void){
-	//Init system using ASF.
-	board_init();
-	sysclk_init();
-	
+/** 
+ * Initialization of vga output.
+ */
+void vga_init(void){
 	//Enable timer clocks.
 	sysclk_enable_peripheral_clock(ID_TC0);
 	sysclk_enable_peripheral_clock(ID_TC1);
@@ -354,9 +353,38 @@ int main(void){
 			pixel_buffer[r][c] = 0;
 		}
 	}
-	
-	//Start vsync timer.
+}
+
+/** 
+ * Start VGA output.
+ */
+void vga_start(void){
+	//Start vsync timer that starts vga.
 	tc_start(TC_VGA, TCC_VSYNC);
+}
+
+/** 
+ * Stop VGA output.
+ */
+void vga_stop(void){
+	//Stop vsync timer
+	tc_stop(TC_VGA, TCC_VSYNC);
+	//Stop vsync pulse timer
+	tc_stop(TC_VGA, TCC_VSYNC_PULSE);
+	//Stop hsync timer
+	tc_stop(TC_VGA, TCC_HSYNC);
+}
+
+int main(void){
+	//Init system using ASF.
+	board_init();
+	sysclk_init();
+	
+	//Init and start vga output.
+	vga_init();
+	vga_start();
 	
 	system_loop();
+	
+	vga_stop();
 }
