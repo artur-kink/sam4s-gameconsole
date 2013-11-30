@@ -233,7 +233,7 @@ void vga_hsync(){
 /** 
  * Clear screen to given color.
  */
-inline void vga_clear_screen(unsigned char color){
+void vga_clear_screen(unsigned char color){
 	for(int r = 0; r < SCREEN_HEIGHT; r++){
 		for(int c = 0; c < SCREEN_WIDTH; c++){
 			pixel_buffer[r][c] = 0;

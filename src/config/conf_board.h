@@ -43,8 +43,8 @@
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
 
-#define TC_VSYNC_Handler  TC0_Handler
-#define TC_VSYNC_PULSE_Handler  TC1_Handler
-#define TC_HSYNC_Handler  TC2_Handler
+#define vga_vsync_Handler  TC0_Handler
+#define vga_vsync_pulse_Handler  TC1_Handler
+#define vga_hsync_Handler  TC2_Handler
 
 #endif /* CONF_BOARD_H */

@@ -160,10 +160,10 @@ void vga_vsync_pulse_Handler(void);
 void vga_hsync_Handler(void);
 void vga_hsync(void);
 
+inline void vga_clear_screen(unsigned char color);
+
 void vga_start(void);
 void vga_stop(void);
 void vga_init(void);
-
-inline void vga_clear_screen(unsigned char color);
 
 #endif
