@@ -1,6 +1,7 @@
 #ifndef VGA_H_
 #define VGA_H_
 #include "asf.h"
+#include "controller.h"
 
 /** 
  * VGA Output on SAM4S, for xplained-pro demo board.

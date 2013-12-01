@@ -134,6 +134,10 @@ void vga_vsync_Handler(void){
 		tc_start(TC_VGA, TCC_VSYNC_PULSE);
 		ioport_set_pin_level(PIN_VSYNC, 0);
 		
+		//Update controller state in free time.
+		//One update per frame.
+		controller_update();
+		
 		//Debug 1 second led counter.
 		sec_counter++;
 		if(sec_counter == 60){
