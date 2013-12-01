@@ -1,7 +1,9 @@
-sam4s-vga
+sam4s-gameconsole
 =========
 
-VGA display for Atmel SAM4S MCUs.
+Game console for Atmel SAM4S MCUs.
+
+VGA used for video output.
 
 Developed on SAM4S Explained Pro
 
