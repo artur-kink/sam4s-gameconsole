@@ -1,17 +1,7 @@
 #include "asf.h"
 #include "vga.h"
 
-
-/** 
- * Main system loop.
- */
-void system_loop(){
-	static int i = 0;
-	while(1){
-		i++;
-		vga_clear_screen(i);
-	}
-}
+#include "game.h"
 
 int main(void){
 	//Init system using ASF.
@@ -22,7 +12,7 @@ int main(void){
 	vga_init();
 	vga_start();
 	
-	system_loop();
+	game_main();
 	
 	vga_stop();
 	return 0;

@@ -236,7 +236,15 @@ void vga_hsync(){
 void vga_clear_screen(unsigned char color){
 	for(int r = 0; r < SCREEN_HEIGHT; r++){
 		for(int c = 0; c < SCREEN_WIDTH; c++){
-			pixel_buffer[r][c] = 0;
+			pixel_buffer[r][c] = color;
 		}
 	}
+}
+
+void vga_set_pixel(unsigned int x, unsigned int y, unsigned char color){
+	pixel_buffer[y][x] = color;
+}
+
+unsigned char vga_get_pixel(unsigned int x, unsigned int y){
+	return pixel_buffer[y][x];
 }

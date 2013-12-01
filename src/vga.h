@@ -161,6 +161,8 @@ void vga_hsync_Handler(void);
 void vga_hsync(void);
 
 inline void vga_clear_screen(unsigned char color);
+inline void vga_set_pixel(unsigned int x, unsigned int y, unsigned char color);
+inline unsigned char vga_get_pixel(unsigned int x, unsigned int y);
 
 void vga_start(void);
 void vga_stop(void);
