@@ -596,16 +596,22 @@
     <Compile Include="src\ASF\common\services\pio_sam4sd32b.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\controller.h">
+    <Compile Include="src\controllers\controller.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\controllers\ps_controller.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\controllers\ps_controller.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\game.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\game.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\line_racer.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\ps_controller.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\vga.c">
@@ -1082,6 +1088,7 @@
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\" />
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\GCC\" />
     <Folder Include="src\config\" />
+    <Folder Include="src\controllers" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

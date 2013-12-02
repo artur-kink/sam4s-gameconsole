@@ -1,7 +1,7 @@
-#ifndef VGA_H_
-#define VGA_H_
+#ifndef _VGA_
+#define _VGA_
 #include "asf.h"
-#include "controller.h"
+#include "controllers/controller.h"
 
 /** 
  * VGA Output on SAM4S, for xplained-pro demo board.
@@ -168,5 +168,7 @@ inline unsigned char vga_get_pixel(unsigned int x, unsigned int y);
 void vga_start(void);
 void vga_stop(void);
 void vga_init(void);
+
+inline int vga_get_sec_frame(void);
 
 #endif

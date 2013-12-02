@@ -252,3 +252,7 @@ void vga_set_pixel(unsigned int x, unsigned int y, unsigned char color){
 unsigned char vga_get_pixel(unsigned int x, unsigned int y){
 	return pixel_buffer[y][x];
 }
+
+int vga_get_sec_frame(void){
+	return sec_counter;
+}
