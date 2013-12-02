@@ -3,6 +3,9 @@
 
 unsigned int** ps_buttons;
 
+/**
+ * Initialize playstation controllers.
+ */
 void controller_init(void){
 	
 	num_controllers = 2;
@@ -41,6 +44,9 @@ void controller_init(void){
 	
 }
 
+/**
+ * Update controller states.
+ */
 void controller_update(void){
 	int i = 0;
 	int c = 0;

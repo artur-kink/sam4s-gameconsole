@@ -245,14 +245,76 @@ void vga_clear_screen(unsigned char color){
 	}
 }
 
+/** 
+ * Set pixel at x,y to given color.
+ */
 void vga_set_pixel(unsigned int x, unsigned int y, unsigned char color){
 	pixel_buffer[y][x] = color;
 }
 
+/** 
+ * Get color of pixel at x,y.
+ */
 unsigned char vga_get_pixel(unsigned int x, unsigned int y){
 	return pixel_buffer[y][x];
 }
 
+/** 
+ * Draw 8x8 character bitmap to screen with given color and position.
+ */
+void vga_draw_character(int x, int y, unsigned char color, char character){
+	char* bitmap = font_bitmap[character];
+	int r = 0;
+	for(r = 0; r < 8; r++){
+		if(bitmap[r] & 0x01)
+			vga_set_pixel(x, y+r, color);
+		if(bitmap[r] & 0x02)
+			vga_set_pixel(x+1, y+r, color);
+		if(bitmap[r] & 0x04)
+			vga_set_pixel(x+2, y+r, color);
+		if(bitmap[r] & 0x08)
+			vga_set_pixel(x+3, y+r, color);
+		if(bitmap[r] & 0x10)
+			vga_set_pixel(x+4, y+r, color);
+		if(bitmap[r] & 0x20)
+			vga_set_pixel(x+5, y+r, color);
+		if(bitmap[r] & 0x40)
+			vga_set_pixel(x+6, y+r, color);
+		if(bitmap[r] & 0x80)
+			vga_set_pixel(x+7, y+r, color);
+	}
+}
+
+/**
+ * Draw string to screen, using vga_draw_character in a loop.
+ */
+void vga_draw_string(int x, int y, unsigned char color, char* string, unsigned char len){
+	int c = 0;
+	for(c = 0; c < len; c++){
+		vga_draw_character(x + 8*c, y, color, string[c]);
+	}
+}
+
+void vga_draw_line(int x1, int y1, int x2, int y2, unsigned char color){
+	int dx = x2 - x1;
+	if(dx != 0){
+		int dy = y2 - y1;
+		int x = x1;
+		for(x = x1 ;x < x2; x++){
+			int y = y1 + (dy) * (x - x1)/(dx);
+			vga_set_pixel(x, y, color);
+		}
+	}else{
+		int y = y1;
+		for(y = y1 ;y < y2; y++){
+			vga_set_pixel(x1, y, color);
+		}
+	}
+}
+
+/**
+ * Get the vsync counter in current second.
+ */
 int vga_get_sec_frame(void){
 	return sec_counter;
 }
