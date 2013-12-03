@@ -73,7 +73,12 @@ void pong_main(void){
 	menu_drawn = 0;
 
 	char screen_flash = 0;
-	while(1){
+	int run_game = 1;
+	while(run_game){
+		
+		if(controller_is_down(0, ps_select)){
+			run_game = 0;
+		}
 		
 		if(game_state == 0){
 			screen_flash++;

@@ -6,6 +6,15 @@
 
 #include "games/line_racer.h"
 
+struct game_definition{
+	char* name;
+	unsigned char name_len;
+	void* main_entry;	
+};
+
+unsigned char num_games;
+struct game_definition* game_definitions;
+
 void console_main(void);
 
 inline void sleep_frame(void);
