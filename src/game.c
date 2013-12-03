@@ -1,9 +1,11 @@
 #include "game.h"
 
 #include "games/line_racer.h"
+#include "games/pong.h"
 
 void console_main(void){
-	line_racer_main();
+	//line_racer_main();
+	pong_main();
 }
 
 void sleep_frame(void){

@@ -50,6 +50,8 @@ void pong_setup(void){
 	ball_xPrev = ball_x;
 	ball_yPrev = ball_y;
 	
+	server = 1;
+	is_served = 0;
 
 	vga_clear_screen(COLOR_BLACK);
 	vga_draw_string(20, 15, COLOR_WHITE, "PONG Score:", 11);
@@ -70,15 +72,12 @@ void pong_main(void){
 	p1_score = p2_score = 0;
 	menu_drawn = 0;
 
-	server = 1;
-	is_served = 0;
-
 	char screen_flash = 0;
 	while(1){
 		
 		if(game_state == 0){
 			screen_flash++;
-			vga_draw_string(SCREEN_WIDTH/2 - 37, SCREEN_HEIGHT/2 - 10, COLOR_WHITE, "PONG", 10);
+			vga_draw_string(SCREEN_WIDTH/2 - 16, SCREEN_HEIGHT/2 - 10, COLOR_WHITE, "PONG", 4);
 			vga_draw_string(SCREEN_WIDTH/2 - 40, SCREEN_HEIGHT/2, screen_flash, "Press Start", 11);
 			
 			if(menu_drawn == 0){
@@ -106,43 +105,43 @@ void pong_main(void){
 			
 			//PLayer 1 controls
 			if(controller_is_down(0, ps_dpad_up)){
-				p1_y++;
+				p1_y--;
 
 			}else if(controller_is_down(0, ps_dpad_down)){
-				p1_y--;
+				p1_y++;
 			}
 
 			//Player 2 controls
 			if(controller_is_down(0, ps_dpad_up)){
-				p2_y++;
+				p2_y--;
 
 			}else if(controller_is_down(0, ps_dpad_down)){
-				p2_y--;
+				p2_y++;
 			}
 
 			if(is_served == 0 && server == 1 && controller_is_down(0, ps_x)){
 				if(controller_is_down(0, ps_dpad_down)){
-					ball_xdir == 1;
-					ball_ydir == -1;
+					ball_xdir = 1;
+					ball_ydir = 1;
 				} else if(controller_is_down(0, ps_dpad_up)){
-					ball_xdir == 1;
-					ball_ydir == 1;
+					ball_xdir = 1;
+					ball_ydir = -1;
 				} else {
-					ball_xdir == 1;
-					ball_ydir == 0;
+					ball_xdir = 1;
+					ball_ydir = 0;
 				}
 
 				is_served = 1;
 			} else if(is_served == 0 && server == 2 && controller_is_down(0, ps_x)){
 				if(controller_is_down(0, ps_dpad_down)){
-					ball_xdir == -1;
-					ball_ydir == -1;
+					ball_xdir = -1;
+					ball_ydir = 1;
 				} else if(controller_is_down(0, ps_dpad_up)){
-					ball_xdir == -1;
-					ball_ydir == 1;
+					ball_xdir = -1;
+					ball_ydir = -1;
 				} else {
-					ball_xdir == -1;
-					ball_ydir == 0;
+					ball_xdir = -1;
+					ball_ydir = 0;
 				}
 
 				is_served = 1;

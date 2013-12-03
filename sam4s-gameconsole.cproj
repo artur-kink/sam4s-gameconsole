@@ -617,6 +617,12 @@
     <Compile Include="src\games\line_racer.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\games\pong.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\games\pong.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\vga.c">
       <SubType>compile</SubType>
     </Compile>
