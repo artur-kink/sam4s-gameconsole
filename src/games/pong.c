@@ -29,7 +29,7 @@ char is_served;
 char game_state;
 char menu_drawn;
 
-void game_setup(void){
+void pong_setup(void){
 	
 	if(p1_score == 10 || p2_score == 10){
 		game_state = 2;
@@ -52,7 +52,7 @@ void game_setup(void){
 	
 
 	vga_clear_screen(COLOR_BLACK);
-	vga_draw_string(20, 15, COLOR_WHITE, "PONG Score:", 17);
+	vga_draw_string(20, 15, COLOR_WHITE, "PONG Score:", 11);
 	vga_draw_character(156, 15, COLOR_RED, p1_score + 48);
 	vga_draw_character(164, 15, COLOR_WHITE, '|');
 	vga_draw_character(172, 15, COLOR_YELLOW, p2_score + 48);
@@ -64,7 +64,7 @@ void game_setup(void){
 	vga_draw_line(0, SCREEN_HEIGHT-1, SCREEN_WIDTH, SCREEN_HEIGHT-1, BORDER_COLOR);
 }
 
-void line_racer_main(void){
+void pong_main(void){
 	
 	game_state = 0;
 	p1_score = p2_score = 0;
@@ -86,7 +86,7 @@ void line_racer_main(void){
 				menu_drawn = 1;
 				sleep_frames(45);
 			}else if(controller_is_down(0, ps_start)){ // game start from 0
-				game_setup();
+				pong_setup();
 				p1_score = p2_score = 0;
 				server = 1;
 				game_state = 1;
@@ -177,12 +177,12 @@ void line_racer_main(void){
 					is_served = 0;
 					//next server is the winner.
 					server = 2;
-					game_setup();
+					pong_setup();
 				} else if(ball_x >= SCREEN_WIDTH - 2){
 					p1_score++;
 					is_served = 0;
 					server = 1;
-					game_setup();
+					pong_setup();
 				}
 
 				//hit border
