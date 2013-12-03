@@ -37,13 +37,13 @@ void game_setup(void){
 	p2_xdir = -1;
 	
 	vga_clear_screen(COLOR_BLACK);
-	vga_draw_string(20, 15, COLOR_WHITE, "Line Racer Score:", 17);
-	vga_draw_character(156, 15, COLOR_RED, p1_score + 48);
-	vga_draw_character(164, 15, COLOR_WHITE, '/');
-	vga_draw_character(172, 15, COLOR_YELLOW, p2_score + 48);
-	vga_draw_line(0, 28, SCREEN_WIDTH, 28, COLOR_WHITE);
-	vga_draw_line(0, 28, 0, SCREEN_HEIGHT, COLOR_WHITE);
-	vga_draw_line(SCREEN_WIDTH-1, 28, SCREEN_WIDTH-1, SCREEN_HEIGHT, COLOR_WHITE);
+	vga_draw_string(20, 2, COLOR_WHITE, "Line Racer Score:", 17);
+	vga_draw_character(156, 2, COLOR_RED, p1_score + 48);
+	vga_draw_character(164, 2, COLOR_WHITE, '/');
+	vga_draw_character(172, 2, COLOR_YELLOW, p2_score + 48);
+	vga_draw_line(0, 10, SCREEN_WIDTH, 10, COLOR_WHITE);
+	vga_draw_line(0, 10, 0, SCREEN_HEIGHT, COLOR_WHITE);
+	vga_draw_line(SCREEN_WIDTH-1, 10, SCREEN_WIDTH-1, SCREEN_HEIGHT, COLOR_WHITE);
 	vga_draw_line(0, SCREEN_HEIGHT-1, SCREEN_WIDTH, SCREEN_HEIGHT-1, COLOR_WHITE);
 }
 
@@ -109,16 +109,16 @@ void line_racer_main(void){
 			p1_y += p1_ydir;
 			p1_x += p1_xdir;
 		
-			if(controller_is_down(0, ps_dpad_up) && p2_ydir != 1){
+			if(controller_is_down(1, ps_dpad_up) && p2_ydir != 1){
 				p2_ydir = -1;
 				p2_xdir = 0;
-			}else if(controller_is_down(0, ps_dpad_down) && p2_ydir != -1){
+			}else if(controller_is_down(1, ps_dpad_down) && p2_ydir != -1){
 				p2_ydir = 1;
 				p2_xdir = 0;
-			}else if(controller_is_down(0, ps_dpad_left) && p2_xdir != 1){
+			}else if(controller_is_down(1, ps_dpad_left) && p2_xdir != 1){
 				p2_xdir = -1;
 				p2_ydir = 0;
-			}else if(controller_is_down(0, ps_dpad_right) && p2_xdir != -1){
+			}else if(controller_is_down(1, ps_dpad_right) && p2_xdir != -1){
 				p2_xdir = 1;
 				p2_ydir = 0;
 			}

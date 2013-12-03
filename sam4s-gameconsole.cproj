@@ -611,6 +611,12 @@
     <Compile Include="src\game.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\games\256_demo.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\games\256_demo.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\games\line_racer.c">
       <SubType>compile</SubType>
     </Compile>

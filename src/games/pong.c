@@ -19,7 +19,6 @@ short ball_y;
 short ball_xdir;
 short ball_ydir;
 
-
 unsigned char p1_score;
 unsigned char p2_score;
 
@@ -54,10 +53,10 @@ void pong_setup(void){
 	server = 1;
 	is_served = 0;
 
-	vga_clear_screen(COLOR_BLACK);
-	vga_draw_character(156, 15, COLOR_RED, p1_score + 48);
+	vga_clear_screen(COLOR_MAGENTA);
+	vga_draw_character(156, 15, COLOR_GREEN, p1_score + 48);
 	vga_draw_character(164, 15, COLOR_WHITE, '|');
-	vga_draw_character(172, 15, COLOR_YELLOW, p2_score + 48);
+	vga_draw_character(172, 15, COLOR_GREEN, p2_score + 48);
 
 	//BORDER DRAW
 	vga_draw_line(0, 0, SCREEN_WIDTH, 0, BORDER_COLOR);
@@ -74,6 +73,9 @@ void pong_main(void){
 
 	char screen_flash = 0;
 	int run_game = 1;
+	
+	unsigned char ball_color = 0;
+	
 	while(run_game){
 		
 		if(controller_is_down(0, ps_select)){
@@ -117,10 +119,10 @@ void pong_main(void){
 			}
 
 			//Player 2 controls
-			if(controller_is_down(0, ps_dpad_up)){
+			if(controller_is_down(1, ps_dpad_up)){
 				p2_y--;
 
-			}else if(controller_is_down(0, ps_dpad_down)){
+			}else if(controller_is_down(1, ps_dpad_down)){
 				p2_y++;
 			}
 
@@ -137,11 +139,11 @@ void pong_main(void){
 				}
 
 				is_served = 1;
-			} else if(is_served == 0 && server == 2 && controller_is_down(0, ps_x)){
-				if(controller_is_down(0, ps_dpad_down)){
+			} else if(is_served == 0 && server == 2 && controller_is_down(1, ps_x)){
+				if(controller_is_down(1, ps_dpad_down)){
 					ball_xdir = -1;
 					ball_ydir = 1;
-				} else if(controller_is_down(0, ps_dpad_up)){
+				} else if(controller_is_down(1, ps_dpad_up)){
 					ball_xdir = -1;
 					ball_ydir = -1;
 				} else {
@@ -155,16 +157,16 @@ void pong_main(void){
 
 
 			//BORDER check.
-			if( (p1_y + PADDLE_LEN) >= (SCREEN_HEIGHT-1)){
-				p1_y = SCREEN_HEIGHT-(1 + PADDLE_LEN);
-			}else if(p1_y <= 1){
-				p1_y = 2;
+			if(vga_get_pixel(p1_x, p1_y) == BORDER_COLOR){
+				p1_y = p1_yPrev;
+			}else if(vga_get_pixel(p1_x, p1_y+PADDLE_LEN) == BORDER_COLOR){
+				p1_y = p1_yPrev;
 			}
 		
-			if( (p2_y + PADDLE_LEN) >= (SCREEN_HEIGHT-1)){
-				p2_y = SCREEN_HEIGHT-(1 + PADDLE_LEN);
-			}else if(p1_y <= 1){
-				p2_y = 2;
+			if(vga_get_pixel(p2_x, p2_y) == BORDER_COLOR){
+				p2_y = p2_yPrev;
+			}else if(vga_get_pixel(p2_x, p2_y+PADDLE_LEN) == BORDER_COLOR){
+				p2_y = p2_yPrev;
 			}
 
 
@@ -218,49 +220,60 @@ void pong_main(void){
 					ball_xdir = 1;
 					if(ball_ydir == -1){
 						if(controller_is_down(0, ps_dpad_down)){
-							ball_ydir = -1;
-						} else if(controller_is_down(0, ps_dpad_up)){
 							ball_ydir = 1;
+						} else if(controller_is_down(0, ps_dpad_up)){
+							ball_ydir = -1;
 						} else{
 							ball_ydir = -1;
 						}
 
 					} else if(ball_ydir == 1){
 						if(controller_is_down(0, ps_dpad_down)){
-							ball_ydir = -1;
-						} else if(controller_is_down(0, ps_dpad_up)){
 							ball_ydir = 1;
+						} else if(controller_is_down(0, ps_dpad_up)){
+							ball_ydir = -1;
 						} else{
 							ball_ydir = 1;
 						}
-						ball_ydir = -1;
 					} else{
-						ball_ydir = 0;
+						if(controller_is_down(0, ps_dpad_down)){
+							ball_ydir = 1;
+						} else if(controller_is_down(0, ps_dpad_up)){
+							ball_ydir = -1;
+						} else{
+							ball_ydir = 0;
+						}
+						
 					}
 
 				} else if(vga_get_pixel(ball_x, ball_y) == PLAYER_TWO){
 					ball_x = p2_x - 1;
 					ball_xdir = -1;
 					if(ball_ydir == -1){
-						if(controller_is_down(0, ps_dpad_down)){
+						if(controller_is_down(1, ps_dpad_down)){
 							ball_ydir = -1;
-						} else if(controller_is_down(0, ps_dpad_up)){
+						} else if(controller_is_down(1, ps_dpad_up)){
 							ball_ydir = 1;
 						} else{
 							ball_ydir = -1;
 						}
 
 					} else if(ball_ydir == 1){
-						if(controller_is_down(0, ps_dpad_down)){
-							ball_ydir = -1;
-						} else if(controller_is_down(0, ps_dpad_up)){
+						if(controller_is_down(1, ps_dpad_down)){
 							ball_ydir = 1;
+						} else if(controller_is_down(1, ps_dpad_up)){
+							ball_ydir = -1;
 						} else{
 							ball_ydir = 1;
 						}
-						ball_ydir = -1;
 					} else{
-						ball_ydir = 0;
+						if(controller_is_down(1, ps_dpad_down)){
+							ball_ydir = 1;
+						} else if(controller_is_down(1, ps_dpad_up)){
+							ball_ydir = -1;
+						} else{
+							ball_ydir = 0;
+						}
 					}
 				}
 
@@ -279,15 +292,16 @@ void pong_main(void){
 		
 
 			//DRAW PLAYERS
-			vga_draw_line(p1_x, p1_yPrev, p1_x, p1_yPrev + PADDLE_LEN, COLOR_BLACK);  // draw current position black first
+			vga_draw_line(p1_x, p1_yPrev, p1_x, p1_yPrev + PADDLE_LEN, COLOR_MAGENTA);  // draw current position black first
 			vga_draw_line(p1_x, p1_y, p1_x, p1_y + PADDLE_LEN, PLAYER_ONE);			  // draw new position
 
-			vga_draw_line(p2_x, p2_yPrev, p2_x, p2_yPrev + PADDLE_LEN, COLOR_BLACK);  // draw current position black first
+			vga_draw_line(p2_x, p2_yPrev, p2_x, p2_yPrev + PADDLE_LEN, COLOR_MAGENTA);  // draw current position black first
 			vga_draw_line(p2_x, p2_y, p2_x, p2_y + PADDLE_LEN, PLAYER_TWO);			  // draw new position
 
 			//DRAW BALL
 			vga_set_pixel(ball_xPrev, ball_yPrev, COLOR_BLACK);
-			vga_set_pixel(ball_x, ball_y, BALL_COLOR);
+			ball_color++;
+			vga_set_pixel(ball_x, ball_y, ball_color);
 
 		}else{
 			if(menu_drawn == 0){

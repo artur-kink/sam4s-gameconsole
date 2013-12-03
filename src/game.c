@@ -4,11 +4,12 @@
 
 #include "games/line_racer.h"
 #include "games/pong.h"
+#include "games/256_demo.h"
 
 void console_main(void){
 	
 	//Init games
-	num_games = 2;
+	num_games = 3;
 	game_definitions = malloc(sizeof(struct game_definition)*num_games);
 	game_definitions[0].main_entry = &line_racer_main;
 	game_definitions[0].name = "Line Racer";
@@ -17,6 +18,10 @@ void console_main(void){
 	game_definitions[1].main_entry = &pong_main;
 	game_definitions[1].name = "Pong";
 	game_definitions[1].name_len = 4;
+	
+	game_definitions[2].main_entry = &_256_main;
+	game_definitions[2].name = "256 Color Demo";
+	game_definitions[2].name_len = 14;
 	
 	unsigned char selection = 0;
 	while(1){
