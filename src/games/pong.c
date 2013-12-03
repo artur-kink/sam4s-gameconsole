@@ -64,7 +64,7 @@ void game_setup(void){
 	vga_draw_line(0, SCREEN_HEIGHT-1, SCREEN_WIDTH, SCREEN_HEIGHT-1, BORDER_COLOR);
 }
 
-void line_racer_main(void){
+void pong_main(void){
 	
 	game_state = 0;
 	p1_score = p2_score = 0;
