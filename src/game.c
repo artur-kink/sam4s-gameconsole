@@ -24,7 +24,7 @@ void console_main(void){
 		int i = 0;
 		for(i = 0; i < num_games; i++){
 			if(selection == i){
-				vga_draw_character(29, 30 + i*8, COLOR_WHITE, '>');
+				vga_draw_character(29, 30 + i*8, COLOR_RED, '>');
 				vga_draw_string(35, 30 + i*8, COLOR_RED, game_definitions[i].name, game_definitions[i].name_len);
 			}else{
 				vga_draw_character(29, 30 + i*8, COLOR_BLACK, '>');
@@ -45,7 +45,7 @@ void console_main(void){
 			sleep_frames(25);
 		}else if(controller_is_down(0, ps_dpad_up)){
 			selection--;
-			if(selection < 0)
+			if(selection >= num_games)
 				selection = num_games-1;
 			sleep_frames(25);
 		}
