@@ -611,7 +611,10 @@
     <Compile Include="src\game.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\line_racer.c">
+    <Compile Include="src\games\line_racer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\games\line_racer.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\vga.c">
@@ -1089,6 +1092,7 @@
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\GCC\" />
     <Folder Include="src\config\" />
     <Folder Include="src\controllers" />
+    <Folder Include="src\games" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

@@ -1,5 +1,13 @@
 #include "game.h"
 
+#include "games/line_racer.h"
+
+
+
+void console_main(void){
+	line_racer_main();
+}
+
 void sleep_frame(void){
 	unsigned int sleep_frame_val = vga_get_sec_frame();
 	while(1){

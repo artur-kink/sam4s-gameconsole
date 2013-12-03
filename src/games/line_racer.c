@@ -1,6 +1,7 @@
 #include "game.h"
 
 #include "controllers/ps_controller.h"
+#include "games/line_racer.h"
 
 short p1_x;
 short p1_y;
@@ -46,30 +47,35 @@ void game_setup(void){
 	vga_draw_line(0, SCREEN_HEIGHT-1, SCREEN_WIDTH, SCREEN_HEIGHT-1, COLOR_WHITE);
 }
 
-void game_main(void){
+void line_racer_main(void){
 	
 	game_state = 0;
 	p1_score = p2_score = 0;
 	menu_drawn = 0;
+	char screen_flash = 0;
 	while(1){
 		
 		if(game_state == 0){
+			screen_flash++;
+			vga_draw_string(SCREEN_WIDTH/2 - 37, SCREEN_HEIGHT/2 - 10, screen_flash, "LINE RACER", 10);
+			vga_draw_string(SCREEN_WIDTH/2 - 40, SCREEN_HEIGHT/2, screen_flash, "Press Start", 11);
+			
 			if(menu_drawn == 0){
 				vga_clear_screen(COLOR_BLACK);
-				vga_draw_string(SCREEN_WIDTH/2 - 40, SCREEN_HEIGHT/2, COLOR_WHITE, "Press Start", 11);
 				menu_drawn = 1;
-			}
-			if(controller_is_down(0, ps_start)){
+				sleep_frames(45);
+			}else if(controller_is_down(0, ps_start)){
 				game_setup();
 				p1_score = p2_score = 0;
 				game_state = 1;
+				sleep_frames(45);
 			}
 			
 		}else if(game_state == 1){
-			//if(controller_is_down(0, ps_start)){
-			//	game_setup();
-			//	p1_score = p2_score = 0;
-			//}
+			if(controller_is_down(0, ps_start)){
+				game_state = 0;
+				menu_drawn = 0;
+			}
 		
 			if(controller_is_down(0, ps_dpad_up) && p1_ydir != 1){
 				p1_ydir = -1;
@@ -149,11 +155,12 @@ void game_main(void){
 				}
 				
 				menu_drawn = 1;
-			}
-			if(controller_is_down(0, ps_start)){
+				sleep_frames(60);
+			}else if(controller_is_down(0, ps_start)){
 				game_state = 0;
 				menu_drawn = 0;
 			}
+			
 		}
 		
 		sleep_frame();

@@ -12,7 +12,7 @@ int main(void){
 	vga_init();
 	vga_start();
 	
-	game_main();
+	console_main();
 	
 	vga_stop();
 	return 0;
