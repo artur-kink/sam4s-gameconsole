@@ -2,8 +2,6 @@
 
 #include "games/line_racer.h"
 
-
-
 void console_main(void){
 	line_racer_main();
 }
