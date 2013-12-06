@@ -298,6 +298,8 @@ inline void vga_clear_screen(unsigned char color);
 inline void vga_set_pixel(unsigned int x, unsigned int y, unsigned char color);
 inline unsigned char vga_get_pixel(unsigned int x, unsigned int y);
 inline int vga_get_sec_frame(void);
+
+void vga_draw_bytemap(int x, int y, unsigned char** bytemap, unsigned char width, unsigned char height);
 void vga_draw_character(int x, int y, unsigned char color, char character);
 void vga_draw_string(int x, int y, unsigned char color, char* string, unsigned char len);
 void vga_draw_line(int x1, int y1, int x2, int y2, unsigned char color);

@@ -259,6 +259,16 @@ unsigned char vga_get_pixel(unsigned int x, unsigned int y){
 	return pixel_buffer[y][x];
 }
 
+void vga_draw_bytemap(int x, int y, unsigned char** bytemap, unsigned char width, unsigned char height){
+	unsigned char r = 0;
+	unsigned char c = 0;
+	for(r = 0; r < height; r++){
+		for(c = 0; c < width; c++){
+			vga_set_pixel(x + c y + r, bytemap[r][c]);
+		}
+	}
+}
+
 /** 
  * Draw 8x8 character bitmap to screen with given color and position.
  */
@@ -295,6 +305,9 @@ void vga_draw_string(int x, int y, unsigned char color, char* string, unsigned c
 	}
 }
 
+/**
+ * Draw line on screen from (x1,y1) to (x2,y2).
+ */
 void vga_draw_line(int x1, int y1, int x2, int y2, unsigned char color){
 	int dx = x2 - x1;
 	if(dx != 0){
